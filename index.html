@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PICO-8 VRAM Video Processor v1.04 [RPi GPIO/CRT Utility]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ESTÉTICA RIGOROSA WEB 1.0 / WINDOWS 95 / 98 / UTILITÁRIO TÉCNICO */
+        * {
+            box-sizing: border-box;
+            border-radius: 0px !important;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: none;
+            font-smooth: never;
+        }
+
+        body {
+            background-color: #c0c0c0;
+            color: #000000;
+            font-family: "Tahoma", "MS Sans Serif", "Geneva", sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 4px;
+            overflow-x: hidden;
+        }
+
+        .mono {
+            font-family: "Courier New", Courier, monospace;
+        }
+
+        /* Bordas Chanfradas Clássicas (3D Bevels) */
+        .win-outset {
+            background-color: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: inset -1px -1px 0px #808080, inset 1px 1px 0px #dfdfdf;
+        }
+
+        .win-inset {
+            background-color: #ffffff;
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            box-shadow: inset 1px 1px 0px #808080;
+        }
+
+        .win-inset-gray {
+            background-color: #b4b4b4;
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+        }
+
+        .win-titlebar {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: #ffffff;
+            font-weight: bold;
+            padding: 3px 6px;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .win-section-header {
+            background-color: #808080;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 2px 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+            border-top: 1px solid #404040;
+            border-bottom: 1px solid #ffffff;
+            margin-bottom: 4px;
+        }
+
+        fieldset {
+            border-top: 1px solid #808080;
+            border-left: 1px solid #808080;
+            border-right: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            box-shadow: inset 1px 1px 0px #ffffff, 1px 1px 0px #808080;
+            padding: 6px;
+            margin-bottom: 8px;
+        }
+
+        legend {
+            padding: 0 4px;
+            font-weight: bold;
+            color: #000080;
+        }
+
+        /* Botões Estilo Win95 */
+        .win-btn {
+            background-color: #c0c0c0;
+            color: #000000;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-family: "Tahoma", "MS Sans Serif", sans-serif;
+            cursor: pointer;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .win-btn:active, .win-btn.active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            background-color: #b5b5b5;
+            padding: 4px 7px 2px 9px;
+        }
+
+        .win-btn-primary {
+            font-weight: bold;
+            outline: 1px solid #000000;
+        }
+
+        /* Inputs & Selects */
+        select, input[type="number"], input[type="text"] {
+            background-color: #ffffff;
+            color: #000000;
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            padding: 2px 4px;
+            font-size: 11px;
+            font-family: "Tahoma", sans-serif;
+            width: 100%;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 16px;
+            background: #c0c0c0;
+            border-top: 1px solid #404040;
+            border-left: 1px solid #404040;
+            border-right: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            margin: 2px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 11px;
+            height: 18px;
+            background: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            cursor: pointer;
+        }
+
+        /* Canvas Pixel-Perfect */
+        .pixel-canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background-color: #000000;
+        }
+
+        /* Viewport Checkerboard Clássico */
+        .viewport-bg {
+            background-color: #606060;
+            background-image: 
+                linear-gradient(45deg, #484848 25%, transparent 25%), 
+                linear-gradient(-45deg, #484848 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #484848 75%), 
+                linear-gradient(-45deg, transparent 75%, #484848 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+
+        /* Swatches de Paleta */
+        .swatch-box {
+            width: 100%;
+            height: 22px;
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Courier New", monospace;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .swatch-box.disabled::after {
+            content: "X";
+            color: #ffffff;
+            background-color: rgba(0,0,0,0.75);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* Scrollbar Clássica */
+        ::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #dfdfdf;
+            border-left: 1px solid #808080;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- JANELA PRINCIPAL DO APLICATIVO -->
+    <div class="win-outset flex-1 flex flex-col p-1">
+        
+        <!-- BARRA DE TÍTULO -->
+        <div class="win-titlebar mb-1">
+            <div class="flex items-center gap-2 truncate">
+                <span class="inline-block w-3 h-3 shrink-0 bg-[#ff004d] border border-white"></span>
+                <span class="truncate">PICO-8 VRAM &amp; RPi CRT/SPI PHOTO PROCESSOR — [0x6000..0x7FFF]</span>
+            </div>
+            <div class="flex gap-1 shrink-0">
+                <button class="win-btn px-2 py-0 text-[10px]" onclick="resetAllParams()" title="Restaurar Padrões de Fábrica">RST</button>
+                <button class="win-btn px-2 py-0 text-[10px]" onclick="toggleAboutModal()">?</button>
+            </div>
+        </div>
+
+        <!-- BARRA DE FERRAMENTAS / MENU SUPERIOR -->
+        <div class="win-outset p-1.5 mb-1 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1">
+                <label class="win-btn win-btn-primary cursor-pointer">
+                    <span>[Carregar Arquivo...]</span>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </label>
+                <button class="win-btn" id="btnWebcam" onclick="toggleWebcam()">[Capturar Webcam]</button>
+                
+                <span class="mx-1 text-[#808080] hidden sm:inline">|</span>
+                <span class="font-bold">Amostras ROM:</span>
+                <button class="win-btn" onclick="loadProceduralPreset('smpte')">1.Calibração SMPTE</button>
+                <button class="win-btn" onclick="loadProceduralPreset('synth')">2.Paisagem Cyber</button>
+                <button class="win-btn" onclick="loadProceduralPreset('portrait')">3.Retrato Sintético</button>
+                <button class="win-btn" onclick="loadProceduralPreset('geometry')">4.Sólidos 3D</button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1">
+                <button class="win-btn touch-none" id="btnCompare" oncontextmenu="return false;" onmousedown="setCompareMode(true)" onmouseup="setCompareMode(false)" onmouseleave="setCompareMode(false)" ontouchstart="setCompareMode(true)" ontouchend="setCompareMode(false)">
+                    [Segurar: Ver Original]
+                </button>
+                <button class="win-btn" onclick="triggerVramGlitchPulse()">⚡ Pulso poke(0x6000)</button>
+                <button class="win-btn font-bold text-[#000080]" onclick="exportUpscaledPNG()">Salvar PNG (CRT/HD)</button>
+                <button class="win-btn" onclick="exportNativePNG()">PNG 1:1</button>
+                <button class="win-btn mono" onclick="openGfxExportModal()">Gerar __gfx__</button>
+            </div>
+        </div>
+
+        <!-- ÁREA CENTRAL: 3 COLUNAS DE ENGENHARIA -->
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-1 min-h-0">
+
+            <!-- COLUNA ESQUERDA: MODO DE VÍDEO, CONDICIONAMENTO DE SINAL & DITHERING -->
+            <div class="lg:col-span-3 win-outset p-1.5 flex flex-col overflow-visible lg:overflow-y-auto lg:max-h-[82vh]">
+                
+                <!-- 1. PIPELINE DE GEOMETRIA E VÍDEO -->
+                <fieldset>
+                    <legend>1. Modo de Vídeo (0x5F2C)</legend>
+                    
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Arquitetura de Buffer VRAM:</label>
+                        <select id="videoMode" onchange="scheduleProcess()">
+                            <option value="128x128" selected>128x128 Nativo (1:1 PICO-8 Standard)</option>
+                            <option value="64x64">64x64 Low-Res (poke 0x5f2c, 3)</option>
+                            <option value="128x64">128x64 Wide Scanline (Anamórfico)</option>
+                            <option value="256x256">256x256 Hi-Res Subpixel (PICO-8 Ext)</option>
+                            <option value="custom">Resolução Dinâmica (Downsampler)</option>
+                        </select>
+                    </div>
+
+                    <div id="customScaleContainer" class="mb-2 hidden">
+                        <div class="flex justify-between">
+                            <span>Fator de Downsampling:</span>
+                            <span id="valPixelScale" class="mono font-bold">4x</span>
+                        </div>
+                        <input type="range" id="pixelScale" min="1" max="16" step="1" value="4" oninput="updateLabel('valPixelScale', this.value+'x'); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Enquadramento de Entrada:</label>
+                        <select id="cropMode" onchange="scheduleProcess()">
+                            <option value="cover" selected>Corte Central 1:1 (Square Crop)</option>
+                            <option value="stretch">Esticar para o Buffer (Stretch)</option>
+                            <option value="fit">Letterbox com Borda Cor 0 (Fit)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1 mt-1">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="flipX" onchange="scheduleProcess()">
+                            <span>Flip H (0x5f2c:1)</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="flipY" onchange="scheduleProcess()">
+                            <span>Flip V (0x5f2c:2)</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="rot90" onchange="scheduleProcess()">
+                            <span>Rot 90° (0x5f2c:5)</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="interleave" onchange="scheduleProcess()">
+                            <span>Scan Interleave</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <!-- 2. CONDICIONAMENTO DE SINAL (PRÉ-ADC) -->
+                <fieldset>
+                    <legend>2. Condicionamento de Sinal</legend>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Luminância (DC Bias):</span>
+                            <span id="valBright" class="mono">0</span>
+                        </div>
+                        <input type="range" id="brightness" min="-100" max="100" value="0" oninput="updateLabel('valBright', this.value); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Ganho de Contraste:</span>
+                            <span id="valContrast" class="mono">15%</span>
+                        </div>
+                        <input type="range" id="contrast" min="-80" max="100" value="15" oninput="updateLabel('valContrast', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Curva Gamma (CRT ADC):</span>
+                            <span id="valGamma" class="mono">1.00</span>
+                        </div>
+                        <input type="range" id="gamma" min="0.20" max="2.80" step="0.05" value="1.00" oninput="updateLabel('valGamma', parseFloat(this.value).toFixed(2)); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Saturação de Croma:</span>
+                            <span id="valSat" class="mono">120%</span>
+                        </div>
+                        <input type="range" id="saturation" min="0" max="250" value="120" oninput="updateLabel('valSat', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between">
+                            <span>Kernel Laplaciano (Borda 3x3):</span>
+                            <span id="valSharp" class="mono">25%</span>
+                        </div>
+                        <input type="range" id="sharpen" min="0" max="150" value="25" oninput="updateLabel('valSharp', this.value+'%'); scheduleProcess()">
+                    </div>
+                </fieldset>
+
+                <!-- 3. MATRIZ DE DITHERING & FILLP() -->
+                <fieldset>
+                    <legend>3. Quantização &amp; Dither (fillp)</legend>
+
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Algoritmo de Dithering:</label>
+                        <select id="ditherAlgo" onchange="updateFillpPatternPreview(); scheduleProcess()">
+                            <optgroup label="Matrizes Ordenadas (Bayer)">
+                                <option value="bayer4" selected>Bayer 4x4 (Clássico 16- níveis)</option>
+                                <option value="bayer2">Bayer 2x2 (Textura Grossa)</option>
+                                <option value="bayer8">Bayer 8x8 (Gradiente Suave)</option>
+                            </optgroup>
+                            <optgroup label="Padrões Binários PICO-8 fillp()">
+                                <option value="fillp_checker">fillp(0x5A5A) — Xadrez 50%</option>
+                                <option value="fillp_hlines">fillp(0xFF00) — Malha Horizontal</option>
+                                <option value="fillp_diag">fillp(0x9669) — Diagonal Cruzada</option>
+                                <option value="fillp_sparse">fillp(0x8282) — Pontilhado Esparso</option>
+                                <option value="fillp_brick">fillp(0xF888) — Textura TijoloVRAM</option>
+                            </optgroup>
+                            <optgroup label="Difusão de Erro (Serpentina)">
+                                <option value="atkinson">Atkinson (Macintosh Alto Contraste)</option>
+                                <option value="floyd">Floyd-Steinberg (16-bit Standard)</option>
+                                <option value="sierra">Sierra Lite (Rápido / Nítido)</option>
+                            </optgroup>
+                            <optgroup label="Sem Textura / Halftone">
+                                <option value="halftone">Cluster Halftone (Retícula Impressa)</option>
+                                <option value="none">Nenhum (Quantização Sólida Pura)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="flex justify-between">
+                            <span>Spread / Intensidade Dither:</span>
+                            <span id="valDitherStrength" class="mono">42</span>
+                        </div>
+                        <input type="range" id="ditherStrength" min="0" max="120" value="42" oninput="updateLabel('valDitherStrength', this.value); scheduleProcess()">
+                    </div>
+
+                    <div class="win-inset p-1.5 bg-[#dfdfdf] flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-[10px]">Registro 0x5F31 (fillp):</div>
+                            <div id="fillpBitString" class="mono text-[10px] text-[#000080]">0b0101101001011010</div>
+                        </div>
+                        <canvas id="fillpMiniCanvas" width="16" height="16" class="pixel-canvas w-7 h-7 border border-black"></canvas>
+                    </div>
+                </fieldset>
+
+            </div>
+
+            <!-- COLUNA CENTRAL: VIEWPORT DE MONITORAMENTO CRT / LCD -->
+            <div class="lg:col-span-6 flex flex-col gap-1 min-h-0">
+                
+                <!-- BARRA DE CONTROLE DO MONITOR -->
+                <div class="win-outset p-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-1">
+                        <span class="font-bold">Zoom de Inspeção:</span>
+                        <button class="win-btn zoom-btn" onclick="setViewportZoom('fit')">Ajustar</button>
+                        <button class="win-btn zoom-btn" onclick="setViewportZoom(1)">1x</button>
+                        <button class="win-btn zoom-btn" onclick="setViewportZoom(2)">2x</button>
+                        <button class="win-btn zoom-btn active" onclick="setViewportZoom(4)">4x</button>
+                        <button class="win-btn zoom-btn" onclick="setViewportZoom(6)">6x</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="showBezel" checked onchange="scheduleProcess()">
+                            <span class="font-bold">Moldura PICO-8 / Overscan</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="showGridOverlay" onchange="scheduleProcess()">
+                            <span>Grade 8x8 Sprites</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CONTAINER DO CANVAS (VIEWPORT) -->
+                <div id="viewportContainer" class="win-inset viewport-bg flex-1 flex items-center justify-center overflow-auto p-2 sm:p-4 relative min-h-[300px] sm:min-h-[380px]">
+                    
+                    <!-- Wrapper para o Canvas Principal -->
+                    <div id="canvasFrame" class="win-outset p-2 bg-[#181818] inline-block max-w-full shadow-none">
+                        <div class="bg-[#000000] text-[#c2c3c7] mono text-[10px] px-1.5 py-0.5 flex justify-between items-center border-b border-[#5f574f]" id="picoHeaderBar">
+                            <span class="truncate mr-2">PICO-8 DISPLAY OUT [SPI0: 60Hz]</span>
+                            <span id="headerModeBadge" class="text-[#ffec27] shrink-0">128x128x4bpp</span>
+                        </div>
+                        <canvas id="displayCanvas" width="512" height="512" class="pixel-canvas block mx-auto"></canvas>
+                    </div>
+
+                    <!-- Indicador de Drag & Drop -->
+                    <div id="dropOverlay" class="hidden absolute inset-0 bg-[#000080]/80 text-white flex flex-col items-center justify-center mono text-sm font-bold border-4 border-dashed border-white text-center p-4">
+                        SOLTE A IMAGEM AQUI PARA CARREGAR NA VRAM (0x6000)
+                    </div>
+                </div>
+
+                <!-- HISTOGRAMA DE DISTRIBUIÇÃO DE PALETA EM TEMPO REAL -->
+                <div class="win-outset p-2">
+                    <div class="flex flex-wrap justify-between items-center gap-1 mb-1">
+                        <span class="font-bold text-[#000080]">Alocação de Índices de Cor na VRAM (Histograma de Índices Ativos):</span>
+                        <span id="dominantColorLabel" class="mono text-[10px]">Dominante: #000000 (0%)</span>
+                    </div>
+                    <div id="histogramContainer" class="win-inset bg-[#101010] p-1.5 h-16 flex items-end gap-0.5">
+                        <!-- Barras geradas via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- COLUNA DIREITA: PALETAS PICO-8 (0x5F00 / 0x5F10) & HARDWARE CRT/RPi -->
+            <div class="lg:col-span-3 win-outset p-1.5 flex flex-col overflow-visible lg:overflow-y-auto lg:max-h-[82vh]">
+
+                <!-- 4. SISTEMA DE PALETAS (0x5F00 - 0x5F1F) -->
+                <fieldset>
+                    <legend>4. Tabela de Paletas (0x5F10)</legend>
+
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Banco de Registradores de Cor:</label>
+                        <select id="paletteBank" onchange="onPaletteBankChange()">
+                            <option value="standard" selected>PICO-8 Padrão (Índices 0..15)</option>
+                            <option value="secret">PICO-8 Secreta (poke 0x5f10: 128..143)</option>
+                            <option value="combined32">PICO-8 Combinada (32 Cores Dual-Playfield)</option>
+                            <option value="gameboy">Preset: DMG-01 GameBoy (4 Tons)</option>
+                            <option value="nightvision">Preset: Matriz Visão Noturna (Verde)</option>
+                            <option value="thermal">Preset: Câmera Térmica Infravermelha</option>
+                            <option value="cyberamber">Preset: Monitor Fósforo Âmbar (P3)</option>
+                            <option value="deepblue">Preset: Sub-Bass Azul Profundo</option>
+                            <option value="bw1bit">Preset: 1-Bit Puro (#000000 / #FFF1E8)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Métrica de Distância de Cor:</label>
+                        <select id="colorMetric" onchange="scheduleProcess()">
+                            <option value="redmean" selected>Perceptual Ponderada (Redmean RGB)</option>
+                            <option value="euclidean">Euclidiana Rápida (Delta RGB Direto)</option>
+                            <option value="lumafirst">Luma-First (Preservar Contraste Estrito)</option>
+                        </select>
+                    </div>
+
+                    <!-- Swatches Padrão (0-15) -->
+                    <div class="mb-1 flex justify-between items-center">
+                        <span class="font-bold text-[10px]">Paleta Base (0–15) [Clique p/ isolar]:</span>
+                        <div class="flex gap-1">
+                            <button class="win-btn px-1 py-0 text-[9px]" onclick="setAllSwatches(true)">Todas</button>
+                            <button class="win-btn px-1 py-0 text-[9px]" onclick="invertSwatches()">Inv</button>
+                        </div>
+                    </div>
+                    <div id="stdSwatchesGrid" class="grid grid-cols-4 gap-1 mb-2"></div>
+
+                    <!-- Swatches Secretos (128-143) -->
+                    <div class="mb-1 flex justify-between items-center">
+                        <span class="font-bold text-[10px]">Paleta Estendida (128–143):</span>
+                        <span class="mono text-[9px] text-[#404040]">0x5F10 High-Bit</span>
+                    </div>
+                    <div id="secSwatchesGrid" class="grid grid-cols-4 gap-1"></div>
+                </fieldset>
+
+                <!-- 5. EMULAÇÃO DE DISPLAY RPi GPIO / CRT & VRAM GLITCH -->
+                <fieldset>
+                    <legend>5. Emulação CRT / TFT &amp; VRAM</legend>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Scanlines Horizontais (CRT):</span>
+                            <span id="valScanlines" class="mono">30%</span>
+                        </div>
+                        <input type="range" id="scanlines" min="0" max="90" value="30" oninput="updateLabel('valScanlines', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block mb-0.5 font-bold">Máscara de Subpixel / Fósforo:</label>
+                        <select id="subpixelMask" onchange="scheduleProcess()">
+                            <option value="none">Nenhuma (Pixels Quadrados Puros)</option>
+                            <option value="lcd_grid" selected>Malha TFT SPI (1.44" RPi LCD Hat)</option>
+                            <option value="aperture">Aperture Grille (Trinitron RGB Vertical)</option>
+                            <option value="shadow">Shadow Mask (Fósforo Alternado CRT)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>Intensidade da Máscara:</span>
+                            <span id="valMaskInt" class="mono">25%</span>
+                        </div>
+                        <input type="range" id="maskIntensity" min="0" max="80" value="25" oninput="updateLabel('valMaskInt', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <div class="mb-1.5">
+                        <div class="flex justify-between">
+                            <span>NTSC Composite Chroma Smear:</span>
+                            <span id="valChromaBleed" class="mono">15%</span>
+                        </div>
+                        <input type="range" id="chromaBleed" min="0" max="100" value="15" oninput="updateLabel('valChromaBleed', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <hr class="border-[#808080] my-2">
+
+                    <div class="mb-1">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-[#7e2553]">Corrupção VRAM poke(0x6000):</span>
+                            <span id="valVramGlitch" class="mono">0%</span>
+                        </div>
+                        <input type="range" id="vramGlitch" min="0" max="100" value="0" oninput="updateLabel('valVramGlitch', this.value+'%'); scheduleProcess()">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1 text-[10px]">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="glitchNibbleSwap" checked onchange="scheduleProcess()">
+                            <span>Swap Nibbles (4-bit)</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="glitchRowRepeat" checked onchange="scheduleProcess()">
+                            <span>Repetir Fatias DMA</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+            </div>
+
+        </div>
+
+        <!-- BARRA DE TELEMETRIA / STATUS INFERIOR (ESTILO SISTEMA OPERACIONAL ANTIGO) -->
+        <div class="mt-1 grid grid-cols-2 md:grid-cols-5 gap-1 text-[11px] mono">
+            <div class="win-inset px-2 py-1 bg-[#dfdfdf] truncate">
+                <strong>VRAM:</strong> <span id="statVramBytes">8192 bytes (0x6000-0x7FFF)</span>
+            </div>
+            <div class="win-inset px-2 py-1 bg-[#dfdfdf] truncate">
+                <strong>Cores Ativas:</strong> <span id="statUniqueColors">16 / 16</span>
+            </div>
+            <div class="win-inset px-2 py-1 bg-[#dfdfdf] truncate">
+                <strong>Buffer Nativo:</strong> <span id="statBufferRes">128x128 px (4bpp)</span>
+            </div>
+            <div class="win-inset px-2 py-1 bg-[#dfdfdf] truncate">
+                <strong>Saída Display:</strong> <span id="statOutputRes">512x512 px</span>
+            </div>
+            <div class="win-inset px-2 py-1 bg-[#dfdfdf] truncate col-span-2 md:col-span-1">
+                <strong>Ciclo CPU:</strong> <span id="statRenderTime">0.0 ms</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE EXPORTAÇÃO DE DADOS HEXADECIMAIS (__gfx__) PARA CARTUCHO .P8 -->
+    <div id="gfxModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div class="win-outset w-full max-w-2xl p-1">
+            <div class="win-titlebar mb-2">
+                <span>Exportador de Memória de Sprites PICO-8 (__gfx__ Hex Dump)</span>
+                <button class="win-btn px-2 py-0 text-[10px]" onclick="closeGfxExportModal()">X</button>
+            </div>
+            <div class="p-2">
+                <p class="mb-2">
+                    Abaixo está o despejo hexadecimal real de <strong>128x128 pixels (16.384 nibbles / 128 linhas)</strong> compatível com a seção <code class="mono bg-white px-1">__gfx__</code> de qualquer cartucho <code class="mono bg-white px-1">.p8</code>. Cole diretamente no arquivo de texto do seu cartucho PICO-8:
+                </p>
+                <textarea id="gfxTextarea" rows="12" readonly class="win-inset w-full mono text-[10px] p-2 bg-white text-black resize-none mb-2"></textarea>
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <span id="copyConfirmMsg" class="text-[#008751] font-bold"></span>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="win-btn win-btn-primary" onclick="copyGfxToClipboard()">Copiar Bloco __gfx__</button>
+                        <button class="win-btn" onclick="downloadP8Cartridge()">Baixar Cartucho .P8 Executável</button>
+                        <button class="win-btn" onclick="closeGfxExportModal()">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SOBRE / ESPECIFICAÇÕES DE HARDWARE -->
+    <div id="aboutModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div class="win-outset w-full max-w-lg p-1">
+            <div class="win-titlebar mb-2">
+                <span>Manual Técnico — Arquitetura PICO-8 &amp; RPi Video Processor</span>
+                <button class="win-btn px-2 py-0 text-[10px]" onclick="toggleAboutModal()">X</button>
+            </div>
+            <div class="p-3 space-y-2 text-[11px] leading-relaxed">
+                <p><strong>1. Mapeamento de Memória VRAM (0x6000 - 0x7FFF):</strong> O console de fantasia PICO-8 aloca exatamente 8 KB de RAM para a tela de 128x128 pixels. Cada byte armazena 2 pixels horizontais adjacentes (4 bits por pixel / 1 nibble por índice de cor de 0 a 15).</p>
+                <p><strong>2. Paleta Estendida Secreta (0x5F10):</strong> Ao escrever valores de 128 a 143 nos registradores de paleta de hardware, o PICO-8 desbloqueia 16 tons mais escuros e dessaturados concebidos para sombras e transições noturnas.</p>
+                <p><strong>3. Padrões de Preenchimento fillp(0x5F31):</strong> O motor gráfico utiliza uma máscara binária de 16 bits (matriz 4x4) para mesclar dois índices de paleta sem custo de CPU.</p>
+                <p><strong>4. Simulação TFT/CRT sobre GPIO/SPI:</strong> Em plataformas embarcadas como Raspberry Pi (Zero/3/4) conectadas a telas LCD SPI de 1.44" ou TVs de tubo via vídeo composto RCA, ocorrem artefatos de <em>Chroma Smear</em> e grade física de subpixels reproduzidos fielmente na etapa de upscale.</p>
+                <div class="text-right pt-2">
+                    <button class="win-btn win-btn-primary" onclick="toggleAboutModal()">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vídeo oculto para captura de Webcam -->
+    <video id="webcamVideo" autoplay playsinline class="hidden"></video>
+
+    <script>
+        /***********************************************************************
+         * ESPECIFICAÇÕES REAIS DE HARDWARE PICO-8 (TABELAS DE COR EXATAS)
+         ***********************************************************************/
+        const PICO8_STD_PALETTE = [
+            { id: 0,   hex: "#000000", r: 0,   g: 0,   b: 0,   name: "Black" },
+            { id: 1,   hex: "#1D2B53", r: 29,  g: 43,  b: 83,  name: "Dark Blue" },
+            { id: 2,   hex: "#7E2553", r: 126, g: 37,  b: 83,  name: "Dark Purple" },
+            { id: 3,   hex: "#008751", r: 0,   g: 135, b: 81,  name: "Dark Green" },
+            { id: 4,   hex: "#AB5236", r: 171, g: 82,  b: 54,  name: "Brown" },
+            { id: 5,   hex: "#5F574F", r: 95,  g: 87,  b: 79,  name: "Dark Gray" },
+            { id: 6,   hex: "#C2C3C7", r: 194, g: 195, b: 199, name: "Light Gray" },
+            { id: 7,   hex: "#FFF1E8", r: 255, g: 241, b: 232, name: "White" },
+            { id: 8,   hex: "#FF004D", r: 255, g: 0,   b: 77,  name: "Red" },
+            { id: 9,   hex: "#FFA300", r: 255, g: 163, b: 0,   name: "Orange" },
+            { id: 10,  hex: "#FFEC27", r: 255, g: 236, b: 39,  name: "Yellow" },
+            { id: 11,  hex: "#00E436", r: 0,   g: 228, b: 54,  name: "Green" },
+            { id: 12,  hex: "#29ADFF", r: 41,  g: 173, b: 255, name: "Blue" },
+            { id: 13,  hex: "#83769C", r: 131, g: 118, b: 156, name: "Indigo" },
+            { id: 14,  hex: "#FF77A8", r: 255, g: 119, b: 168, name: "Pink" },
+            { id: 15,  hex: "#FFCCAA", r: 255, g: 204, b: 170, name: "Peach" }
+        ];
+
+        const PICO8_SECRET_PALETTE = [
+            { id: 128, hex: "#291814", r: 41,  g: 24,  b: 20,  name: "Darkest Brown" },
+            { id: 129, hex: "#111D35", r: 17,  g: 29,  b: 53,  name: "Darkest Blue" },
+            { id: 130, hex: "#422136", r: 66,  g: 33,  b: 54,  name: "Deep Plum" },
+            { id: 131, hex: "#125359", r: 18,  g: 83,  b: 89,  name: "Dark Teal" },
+            { id: 132, hex: "#742F29", r: 116, g: 47,  b: 41,  name: "Rust Red" },
+            { id: 133, hex: "#49333B", r: 73,  g: 51,  b: 59,  name: "Mauve Shadow" },
+            { id: 134, hex: "#A28879", r: 162, g: 136, b: 121, name: "Warm Taupe" },
+            { id: 135, hex: "#F3EF7D", r: 243, g: 239, b: 125, name: "Pale Lemon" },
+            { id: 136, hex: "#BE1250", r: 190, g: 18,  b: 80,  name: "Crimson" },
+            { id: 137, hex: "#FF6C24", r: 255, g: 108, b: 36,  name: "Tangerine" },
+            { id: 138, hex: "#A8E72E", r: 168, g: 231, b: 46,  name: "Lime" },
+            { id: 139, hex: "#00B543", r: 0,   g: 181, b: 67,  name: "Emerald" },
+            { id: 140, hex: "#065AB5", r: 6,   g: 90,  b: 181, name: "Cobalt Blue" },
+            { id: 141, hex: "#754665", r: 117, g: 70,  b: 101, name: "Violet Dusk" },
+            { id: 142, hex: "#FF6E59", r: 255, g: 110, b: 89,  name: "Salmon Coral" },
+            { id: 143, hex: "#FF9D81", r: 255, g: 157, b: 129, name: "Warm Apricot" }
+        ];
+
+        // Calcula Luma relativo (ITU-R BT.601) para cada cor das paletas
+        [...PICO8_STD_PALETTE, ...PICO8_SECRET_PALETTE].forEach(c => {
+            c.luma = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+        });
+
+        // Matrizes Bayer normalizadas (-0.5 a +0.5)
+        const BAYER_2X2 = [
+            [ 0/4 - 0.5, 2/4 - 0.5 ],
+            [ 3/4 - 0.5, 1/4 - 0.5 ]
+        ];
+
+        const BAYER_4X4 = [
+            [  0/16 - 0.5,  8/16 - 0.5,  2/16 - 0.5, 10/16 - 0.5 ],
+            [ 12/16 - 0.5,  4/16 - 0.5, 14/16 - 0.5,  6/16 - 0.5 ],
+            [  3/16 - 0.5, 11/16 - 0.5,  1/16 - 0.5,  9/16 - 0.5 ],
+            [ 15/16 - 0.5,  7/16 - 0.5, 13/16 - 0.5,  5/16 - 0.5 ]
+        ];
+
+        const BAYER_8X8 = [
+            [ 0, 32,  8, 40,  2, 34, 10, 42],
+            [48, 16, 56, 24, 50, 18, 58, 26],
+            [12, 44,  4, 36, 14, 46,  6, 38],
+            [60, 28, 52, 20, 62, 30, 54, 22],
+            [ 3, 35, 11, 43,  1, 33,  9, 41],
+            [51, 19, 59, 27, 49, 17, 57, 25],
+            [15, 47,  7, 39, 13, 45,  5, 37],
+            [63, 31, 55, 23, 61, 29, 53, 21]
+        ].map(row => row.map(v => v / 64 - 0.5));
+
+        const HALFTONE_4X4 = [
+            [ 14/16 - 0.5, 10/16 - 0.5, 11/16 - 0.5, 15/16 - 0.5 ],
+            [  6/16 - 0.5,  1/16 - 0.5,  2/16 - 0.5,  7/16 - 0.5 ],
+            [  5/16 - 0.5,  0/16 - 0.5,  3/16 - 0.5,  8/16 - 0.5 ],
+            [ 13/16 - 0.5,  9/16 - 0.5, 12/16 - 0.5, 16/16 - 0.5 ]
+        ];
+
+        // Padrões de 16 bits reais do comando fillp() do PICO-8
+        const FILLP_PATTERNS = {
+            fillp_checker: { mask: 0x5A5A, bits: [
+                [0,1,0,1],
+                [1,0,1,0],
+                [0,1,0,1],
+                [1,0,1,0]
+            ]},
+            fillp_hlines: { mask: 0xFF00, bits: [
+                [1,1,1,1],
+                [0,0,0,0],
+                [1,1,1,1],
+                [0,0,0,0]
+            ]},
+            fillp_diag: { mask: 0x9669, bits: [
+                [1,0,0,1],
+                [0,1,1,0],
+                [0,1,1,0],
+                [1,0,0,1]
+            ]},
+            fillp_sparse: { mask: 0x8282, bits: [
+                [1,0,0,0],
+                [0,0,1,0],
+                [1,0,0,0],
+                [0,0,1,0]
+            ]},
+            fillp_brick: { mask: 0xF888, bits: [
+                [1,1,1,1],
+                [1,0,0,0],
+                [1,1,1,1],
+                [0,0,1,0]
+            ]}
+        };
+
+        // Estado Global da Aplicação
+        let sourceCanvas = document.createElement('canvas');
+        let sourceCtx = sourceCanvas.getContext('2d');
+
+        let lowResCanvas = document.createElement('canvas');
+        let lowResCtx = lowResCanvas.getContext('2d');
+
+        // Buffer de índices PICO-8 (0..15) da última imagem processada para exportar __gfx__
+        let lastIndexBuffer = new Uint8Array(128 * 128);
+        let lastBufferWidth = 128;
+        let lastBufferHeight = 128;
+
+        // Estado de ativação das cores (true = habilitada)
+        let enabledStdColors = new Array(16).fill(true);
+        let enabledSecColors = new Array(16).fill(false);
+
+        let isComparingOriginal = false;
+        let currentZoomMode = 4; // 'fit', 1, 2, 4, 6
+        let processTimer = null;
+        let webcamStream = null;
+        let glitchSeed = 1337;
+
+        /***********************************************************************
+         * INICIALIZAÇÃO DA INTERFACE E SWATCHES
+         ***********************************************************************/
+        window.onload = function() {
+            initPaletteSwatches();
+            updateFillpPatternPreview();
+            setupDragAndDrop();
+            setupFileInput();
+            if (window.innerWidth < 1024) {
+                setViewportZoom('fit');
+            }
+            loadProceduralPreset('synth'); // Carrega preset inicial imediatamente
+        };
+
+        function updateLabel(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function initPaletteSwatches() {
+            const stdGrid = document.getElementById('stdSwatchesGrid');
+            const secGrid = document.getElementById('secSwatchesGrid');
+            stdGrid.innerHTML = '';
+            secGrid.innerHTML = '';
+
+            PICO8_STD_PALETTE.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = `swatch-box ${enabledStdColors[idx] ? '' : 'disabled'}`;
+                div.style.backgroundColor = c.hex;
+                div.style.color = c.luma > 128 ? '#000000' : '#ffffff';
+                div.title = `Índice ${c.id}: ${c.name} (${c.hex})`;
+                div.textContent = c.id;
+                div.onclick = () => {
+                    enabledStdColors[idx] = !enabledStdColors[idx];
+                    ensureAtLeastOneColor();
+                    renderSwatchStates();
+                    scheduleProcess();
+                };
+                stdGrid.appendChild(div);
+            });
+
+            PICO8_SECRET_PALETTE.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = `swatch-box ${enabledSecColors[idx] ? '' : 'disabled'}`;
+                div.style.backgroundColor = c.hex;
+                div.style.color = c.luma > 128 ? '#000000' : '#ffffff';
+                div.title = `Índice ${c.id}: ${c.name} (${c.hex})`;
+                div.textContent = c.id;
+                div.onclick = () => {
+                    enabledSecColors[idx] = !enabledSecColors[idx];
+                    ensureAtLeastOneColor();
+                    renderSwatchStates();
+                    scheduleProcess();
+                };
+                secGrid.appendChild(div);
+            });
+        }
+
+        function renderSwatchStates() {
+            const stdBoxes = document.getElementById('stdSwatchesGrid').children;
+            const secBoxes = document.getElementById('secSwatchesGrid').children;
+            for (let i = 0; i < 16; i++) {
+                stdBoxes[i].classList.toggle('disabled', !enabledStdColors[i]);
+                secBoxes[i].classList.toggle('disabled', !enabledSecColors[i]);
+            }
+        }
+
+        function ensureAtLeastOneColor() {
+            const anyStd = enabledStdColors.some(Boolean);
+            const anySec = enabledSecColors.some(Boolean);
+            if (!anyStd && !anySec) {
+                enabledStdColors[0] = true;
+                enabledStdColors[7] = true;
+            }
+        }
+
+        function setAllSwatches(state) {
+            const bank = document.getElementById('paletteBank').value;
+            if (bank === 'secret') {
+                enabledStdColors.fill(false);
+                enabledSecColors.fill(state);
+            } else if (bank === 'combined32') {
+                enabledStdColors.fill(state);
+                enabledSecColors.fill(state);
+            } else {
+                enabledStdColors.fill(state);
+                enabledSecColors.fill(false);
+            }
+            ensureAtLeastOneColor();
+            renderSwatchStates();
+            scheduleProcess();
+        }
+
+        function invertSwatches() {
+            for (let i = 0; i < 16; i++) {
+                enabledStdColors[i] = !enabledStdColors[i];
+            }
+            ensureAtLeastOneColor();
+            renderSwatchStates();
+            scheduleProcess();
+        }
+
+        function onPaletteBankChange() {
+            const bank = document.getElementById('paletteBank').value;
+            enabledStdColors.fill(false);
+            enabledSecColors.fill(false);
+
+            if (bank === 'standard') {
+                enabledStdColors.fill(true);
+            } else if (bank === 'secret') {
+                enabledSecColors.fill(true);
+            } else if (bank === 'combined32') {
+                enabledStdColors.fill(true);
+                enabledSecColors.fill(true);
+            } else if (bank === 'gameboy') {
+                [0, 3, 11].forEach(i => enabledStdColors[i] = true);
+                enabledSecColors[3] = true; // 131 Dark Teal
+            } else if (bank === 'nightvision') {
+                [0, 3, 11].forEach(i => enabledStdColors[i] = true);
+                [3, 10, 11].forEach(i => enabledSecColors[i] = true);
+            } else if (bank === 'thermal') {
+                [0, 1, 2, 8, 9, 10, 7].forEach(i => enabledStdColors[i] = true);
+            } else if (bank === 'cyberamber') {
+                [0, 4, 9, 10, 15].forEach(i => enabledStdColors[i] = true);
+                [0, 4, 9].forEach(i => enabledSecColors[i] = true);
+            } else if (bank === 'deepblue') {
+                [0, 1, 12, 13, 7].forEach(i => enabledStdColors[i] = true);
+                [1, 3, 12].forEach(i => enabledSecColors[i] = true);
+            } else if (bank === 'bw1bit') {
+                enabledStdColors[0] = true;
+                enabledStdColors[7] = true;
+            }
+
+            renderSwatchStates();
+            scheduleProcess();
+        }
+
+        function getActivePalette() {
+            const active = [];
+            for (let i = 0; i < 16; i++) {
+                if (enabledStdColors[i]) {
+                    active.push({ ...PICO8_STD_PALETTE[i], picoIndex: i });
+                }
+            }
+            for (let i = 0; i < 16; i++) {
+                if (enabledSecColors[i]) {
+                    active.push({ ...PICO8_SECRET_PALETTE[i], picoIndex: i });
+                }
+            }
+            return active.length > 0 ? active : [{ ...PICO8_STD_PALETTE[0], picoIndex: 0 }];
+        }
+
+        /***********************************************************************
+         * PREVIEW DO PADRÃO BINÁRIO FILLP() (16-BIT)
+         ***********************************************************************/
+        function updateFillpPatternPreview() {
+            const algo = document.getElementById('ditherAlgo').value;
+            const miniCanvas = document.getElementById('fillpMiniCanvas');
+            const ctx = miniCanvas.getContext('2d');
+            const bitLabel = document.getElementById('fillpBitString');
+
+            let matrix4x4 = [
+                [0,1,0,1],
+                [1,0,1,0],
+                [0,1,0,1],
+                [1,0,1,0]
+            ];
+            let maskVal = 0x5A5A;
+
+            if (FILLP_PATTERNS[algo]) {
+                matrix4x4 = FILLP_PATTERNS[algo].bits;
+                maskVal = FILLP_PATTERNS[algo].mask;
+            } else if (algo === 'none') {
+                matrix4x4 = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+                maskVal = 0x0000;
+            } else if (algo.startsWith('bayer')) {
+                maskVal = 0xB4E8;
+            } else {
+                maskVal = 0xE2D1;
+            }
+
+            bitLabel.textContent = '0x' + maskVal.toString(16).toUpperCase().padStart(4, '0') + ' (' + maskVal.toString(2).padStart(16, '0').slice(0,8) + '...)';
+
+            ctx.clearRect(0, 0, 16, 16);
+            for (let y = 0; y < 4; y++) {
+                for (let x = 0; x < 4; x++) {
+                    ctx.fillStyle = matrix4x4[y][x] ? '#fff1e8' : '#1d2b53';
+                    ctx.fillRect(x * 4, y * 4, 4, 4);
+                }
+            }
+        }
+
+        /***********************************************************************
+         * GERADOR PROCEDURAL DE AMOSTRAS EM ROM (4 PRESETS REAIS)
+         ***********************************************************************/
+        function loadProceduralPreset(type) {
+            stopWebcamIfNeeded();
+            const w = 320;
+            const h = 320;
+            sourceCanvas.width = w;
+            sourceCanvas.height = h;
+            const ctx = sourceCtx;
+
+            if (type === 'smpte') {
+                const barColors = ['#ffffff', '#ffec27', '#29adff', '#00e436', '#ff77a8', '#ff004d', '#1d2b53', '#000000'];
+                const barW = w / barColors.length;
+                for (let i = 0; i < barColors.length; i++) {
+                    ctx.fillStyle = barColors[i];
+                    ctx.fillRect(i * barW, 0, barW + 1, h * 0.65);
+                }
+                const grad = ctx.createLinearGradient(0, 0, w, 0);
+                grad.addColorStop(0, '#000000');
+                grad.addColorStop(0.5, '#ff6c24');
+                grad.addColorStop(1, '#ffffff');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, h * 0.65, w, h * 0.18);
+
+                const bwGrad = ctx.createLinearGradient(0, 0, w, 0);
+                bwGrad.addColorStop(0, '#000000');
+                bwGrad.addColorStop(1, '#ffffff');
+                ctx.fillStyle = bwGrad;
+                ctx.fillRect(0, h * 0.83, w, h * 0.17);
+
+                const radGrad = ctx.createRadialGradient(w * 0.45, h * 0.4, 8, w * 0.5, h * 0.45, 75);
+                radGrad.addColorStop(0, '#ffffff');
+                radGrad.addColorStop(0.4, '#29adff');
+                radGrad.addColorStop(0.85, '#1d2b53');
+                radGrad.addColorStop(1, '#000000');
+                ctx.fillStyle = radGrad;
+                ctx.beginPath();
+                ctx.arc(w / 2, h * 0.45, 72, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (type === 'synth') {
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.62);
+                skyGrad.addColorStop(0, '#111d35');
+                skyGrad.addColorStop(0.45, '#7e2553');
+                skyGrad.addColorStop(0.8, '#ff004d');
+                skyGrad.addColorStop(1, '#ffa300');
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, w, h * 0.62);
+
+                const sunGrad = ctx.createLinearGradient(0, h * 0.12, 0, h * 0.55);
+                sunGrad.addColorStop(0, '#fff1e8');
+                sunGrad.addColorStop(0.5, '#ffec27');
+                sunGrad.addColorStop(1, '#ff004d');
+                ctx.fillStyle = sunGrad;
+                ctx.beginPath();
+                ctx.arc(w / 2, h * 0.36, 68, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#7e2553';
+                for (let y = h * 0.36; y < h * 0.58; y += 10) {
+                    ctx.fillRect(w / 2 - 75, y, 150, (y - h * 0.34) * 0.08);
+                }
+
+                ctx.fillStyle = '#1d2b53';
+                ctx.beginPath();
+                ctx.moveTo(0, h * 0.62);
+                ctx.lineTo(w * 0.22, h * 0.38);
+                ctx.lineTo(w * 0.45, h * 0.56);
+                ctx.lineTo(w * 0.72, h * 0.35);
+                ctx.lineTo(w, h * 0.62);
+                ctx.closePath();
+                ctx.fill();
+
+                const groundGrad = ctx.createLinearGradient(0, h * 0.62, 0, h);
+                groundGrad.addColorStop(0, '#291814');
+                groundGrad.addColorStop(1, '#1d2b53');
+                ctx.fillStyle = groundGrad;
+                ctx.fillRect(0, h * 0.62, w, h * 0.38);
+
+                ctx.strokeStyle = '#29adff';
+                ctx.lineWidth = 2;
+                for (let i = -8; i <= 8; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(w / 2 + i * 10, h * 0.62);
+                    ctx.lineTo(w / 2 + i * 65, h);
+                    ctx.stroke();
+                }
+                for (let y = h * 0.65; y < h; y += (y - h * 0.6) * 0.35) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+
+            } else if (type === 'portrait') {
+                const bgGrad = ctx.createRadialGradient(w * 0.5, h * 0.4, 20, w * 0.5, h * 0.5, w * 0.7);
+                bgGrad.addColorStop(0, '#29adff');
+                bgGrad.addColorStop(0.5, '#1d2b53');
+                bgGrad.addColorStop(1, '#000000');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.fillStyle = '#7e2553';
+                ctx.beginPath();
+                ctx.ellipse(w * 0.5, h * 0.95, 115, 70, 0, Math.PI, 0);
+                ctx.fill();
+
+                const faceGrad = ctx.createRadialGradient(w * 0.42, h * 0.42, 12, w * 0.52, h * 0.48, 85);
+                faceGrad.addColorStop(0, '#fff1e8');
+                faceGrad.addColorStop(0.35, '#ffccaa');
+                faceGrad.addColorStop(0.7, '#ab5236');
+                faceGrad.addColorStop(1, '#291814');
+                ctx.fillStyle = faceGrad;
+                ctx.beginPath();
+                ctx.ellipse(w * 0.5, h * 0.48, 68, 84, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                const visorGrad = ctx.createLinearGradient(w * 0.3, h * 0.4, w * 0.7, h * 0.46);
+                visorGrad.addColorStop(0, '#00e436');
+                visorGrad.addColorStop(0.5, '#ffec27');
+                visorGrad.addColorStop(1, '#ff004d');
+                ctx.fillStyle = visorGrad;
+                ctx.fillRect(w * 0.31, h * 0.38, w * 0.38, 26);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(w * 0.31, h * 0.38, w * 0.38, 26);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(w * 0.34, h * 0.40, 28, 6);
+
+            } else if (type === 'geometry') {
+                ctx.fillStyle = '#111d35';
+                ctx.fillRect(0, 0, w, h);
+
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 8; x++) {
+                        ctx.fillStyle = (x + y) % 2 === 0 ? '#1d2b53' : '#008751';
+                        ctx.fillRect(x * (w / 8), y * (h / 8), w / 8, h / 8);
+                    }
+                }
+
+                const sphere = ctx.createRadialGradient(w * 0.32, h * 0.32, 5, w * 0.38, h * 0.38, 75);
+                sphere.addColorStop(0, '#ffffff');
+                sphere.addColorStop(0.25, '#ffec27');
+                sphere.addColorStop(0.6, '#ff004d');
+                sphere.addColorStop(1, '#291814');
+                ctx.fillStyle = sphere;
+                ctx.beginPath();
+                ctx.arc(w * 0.38, h * 0.4, 70, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#29adff';
+                ctx.beginPath();
+                ctx.moveTo(w * 0.72, h * 0.22);
+                ctx.lineTo(w * 0.52, h * 0.75);
+                ctx.lineTo(w * 0.72, h * 0.85);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#065ab5';
+                ctx.beginPath();
+                ctx.moveTo(w * 0.72, h * 0.22);
+                ctx.lineTo(w * 0.92, h * 0.75);
+                ctx.lineTo(w * 0.72, h * 0.85);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            scheduleProcess();
+        }
+
+        /***********************************************************************
+         * UPLOAD DE ARQUIVO, DRAG-AND-DROP & WEBCAM
+         ***********************************************************************/
+        function setupFileInput() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    loadUserImageFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function setupDragAndDrop() {
+            const vp = document.getElementById('viewportContainer');
+            const overlay = document.getElementById('dropOverlay');
+
+            window.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                overlay.classList.remove('hidden');
+            });
+
+            vp.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                overlay.classList.add('hidden');
+            });
+
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                overlay.classList.add('hidden');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    loadUserImageFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        function loadUserImageFile(file) {
+            stopWebcamIfNeeded();
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    sourceCanvas.width = img.width;
+                    sourceCanvas.height = img.height;
+                    sourceCtx.drawImage(img, 0, 0);
+                    scheduleProcess();
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function toggleWebcam() {
+            const btn = document.getElementById('btnWebcam');
+            const video = document.getElementById('webcamVideo');
+
+            if (webcamStream) {
+                sourceCanvas.width = video.videoWidth || 320;
+                sourceCanvas.height = video.videoHeight || 240;
+                sourceCtx.drawImage(video, 0, 0, sourceCanvas.width, sourceCanvas.height);
+                stopWebcamIfNeeded();
+                scheduleProcess();
+                return;
+            }
+
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } });
+                video.srcObject = webcamStream;
+                btn.textContent = "[Congelar Frame Webcam]";
+                btn.classList.add('active');
+                requestAnimationFrame(webcamLoop);
+            } catch (err) {
+                btn.textContent = "[Erro/Sem Webcam]";
+                setTimeout(() => { btn.textContent = "[Capturar Webcam]"; }, 2000);
+            }
+        }
+
+        function webcamLoop() {
+            if (!webcamStream) return;
+            const video = document.getElementById('webcamVideo');
+            if (video.readyState >= 2) {
+                sourceCanvas.width = video.videoWidth;
+                sourceCanvas.height = video.videoHeight;
+                sourceCtx.drawImage(video, 0, 0);
+                processImagePipeline();
+            }
+            if (webcamStream) {
+                setTimeout(() => requestAnimationFrame(webcamLoop), 65);
+            }
+        }
+
+        function stopWebcamIfNeeded() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(t => t.stop());
+                webcamStream = null;
+                const btn = document.getElementById('btnWebcam');
+                btn.textContent = "[Capturar Webcam]";
+                btn.classList.remove('active');
+            }
+        }
+
+        /***********************************************************************
+         * PIPELINE PRINCIPAL DE PROCESSAMENTO DE IMAGEM (VRAM + QUANTIZAÇÃO)
+         ***********************************************************************/
+        function scheduleProcess() {
+            const vMode = document.getElementById('videoMode').value;
+            document.getElementById('customScaleContainer').classList.toggle('hidden', vMode !== 'custom');
+
+            if (processTimer) cancelAnimationFrame(processTimer);
+            processTimer = requestAnimationFrame(processImagePipeline);
+        }
+
+        function processImagePipeline() {
+            const t0 = performance.now();
+
+            // 1. Determina Resolução do Buffer Nativo (VRAM Mode)
+            const videoMode = document.getElementById('videoMode').value;
+            const pixelScale = parseInt(document.getElementById('pixelScale').value, 10) || 4;
+            let bufW = 128;
+            let bufH = 128;
+
+            if (videoMode === '128x128') { bufW = 128; bufH = 128; }
+            else if (videoMode === '64x64') { bufW = 64; bufH = 64; }
+            else if (videoMode === '128x64') { bufW = 128; bufH = 64; }
+            else if (videoMode === '256x256') { bufW = 256; bufH = 256; }
+            else if (videoMode === 'custom') {
+                bufW = Math.max(16, Math.min(320, Math.floor(sourceCanvas.width / pixelScale)));
+                bufH = Math.max(16, Math.min(320, Math.floor(sourceCanvas.height / pixelScale)));
+            }
+
+            lastBufferWidth = bufW;
+            lastBufferHeight = bufH;
+
+            lowResCanvas.width = bufW;
+            lowResCanvas.height = bufH;
+
+            // 2. Aplica Transformações de Hardware (0x5f2c) e Crop na entrada
+            const cropMode = document.getElementById('cropMode').value;
+            const flipX = document.getElementById('flipX').checked;
+            const flipY = document.getElementById('flipY').checked;
+            const rot90 = document.getElementById('rot90').checked;
+
+            lowResCtx.save();
+            lowResCtx.fillStyle = '#000000';
+            lowResCtx.fillRect(0, 0, bufW, bufH);
+
+            lowResCtx.translate(bufW / 2, bufH / 2);
+            if (rot90) lowResCtx.rotate(Math.PI / 2);
+            lowResCtx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+
+            const srcW = sourceCanvas.width;
+            const srcH = sourceCanvas.height;
+
+            if (cropMode === 'stretch') {
+                lowResCtx.drawImage(sourceCanvas, -bufW / 2, -bufH / 2, bufW, bufH);
+            } else if (cropMode === 'fit') {
+                const scale = Math.min(bufW / srcW, bufH / srcH);
+                const dw = srcW * scale;
+                const dh = srcH * scale;
+                lowResCtx.drawImage(sourceCanvas, -dw / 2, -dh / 2, dw, dh);
+            } else {
+                const scale = Math.max(bufW / srcW, bufH / srcH);
+                const dw = srcW * scale;
+                const dh = srcH * scale;
+                lowResCtx.drawImage(sourceCanvas, -dw / 2, -dh / 2, dw, dh);
+            }
+            lowResCtx.restore();
+
+            if (isComparingOriginal) {
+                renderComparisonOriginal(bufW, bufH);
+                return;
+            }
+
+            const imgData = lowResCtx.getImageData(0, 0, bufW, bufH);
+            const data = imgData.data;
+
+            // 3. Condicionamento de Sinal (Brilho, Contraste, Gamma, Saturação)
+            const bright = parseFloat(document.getElementById('brightness').value);
+            const contrast = parseFloat(document.getElementById('contrast').value);
+            const gamma = parseFloat(document.getElementById('gamma').value);
+            const sat = parseFloat(document.getElementById('saturation').value) / 100.0;
+            const sharpAmt = parseFloat(document.getElementById('sharpen').value) / 100.0;
+
+            const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+            const invGamma = 1.0 / gamma;
+
+            const floatRGB = new Float32Array(bufW * bufH * 3);
+
+            for (let i = 0, p = 0; i < data.length; i += 4, p += 3) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+
+                r += bright;
+                g += bright;
+                b += bright;
+
+                r = contrastFactor * (r - 128) + 128;
+                g = contrastFactor * (g - 128) + 128;
+                b = contrastFactor * (b - 128) + 128;
+
+                const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                r = luma + (r - luma) * sat;
+                g = luma + (g - luma) * sat;
+                b = luma + (b - luma) * sat;
+
+                r = 255 * Math.pow(Math.max(0, Math.min(255, r)) / 255, invGamma);
+                g = 255 * Math.pow(Math.max(0, Math.min(255, g)) / 255, invGamma);
+                b = 255 * Math.pow(Math.max(0, Math.min(255, b)) / 255, invGamma);
+
+                floatRGB[p]     = Math.max(0, Math.min(255, r));
+                floatRGB[p + 1] = Math.max(0, Math.min(255, g));
+                floatRGB[p + 2] = Math.max(0, Math.min(255, b));
+            }
+
+            // 4. Kernel Laplaciano 3x3 (Sharpen de Bordas para 128x128)
+            if (sharpAmt > 0.01) {
+                const copyRGB = new Float32Array(floatRGB);
+                for (let y = 1; y < bufH - 1; y++) {
+                    for (let x = 1; x < bufW - 1; x++) {
+                        const idx = (y * bufW + x) * 3;
+                        for (let c = 0; c < 3; c++) {
+                            const center = copyRGB[idx + c];
+                            const neighbors = (
+                                copyRGB[((y - 1) * bufW + x) * 3 + c] +
+                                copyRGB[((y + 1) * bufW + x) * 3 + c] +
+                                copyRGB[(y * bufW + (x - 1)) * 3 + c] +
+                                copyRGB[(y * bufW + (x + 1)) * 3 + c]
+                            ) * 0.25;
+                            const sharpened = center + (center - neighbors) * (sharpAmt * 2.2);
+                            floatRGB[idx + c] = Math.max(0, Math.min(255, sharpened));
+                        }
+                    }
+                }
+            }
+
+            // 5. Quantização na Paleta PICO-8 + Matrizes de Dithering / fillp()
+            const activePalette = getActivePalette();
+            const ditherAlgo = document.getElementById('ditherAlgo').value;
+            const ditherStrength = parseFloat(document.getElementById('ditherStrength').value);
+            const metric = document.getElementById('colorMetric').value;
+            const interleave = document.getElementById('interleave').checked;
+
+            lastIndexBuffer = new Uint8Array(bufW * bufH);
+            const colorCounts = new Array(16).fill(0);
+
+            const isErrorDiffusion = (ditherAlgo === 'atkinson' || ditherAlgo === 'floyd' || ditherAlgo === 'sierra');
+            const isFillp = ditherAlgo.startsWith('fillp_');
+
+            for (let y = 0; y < bufH; y++) {
+                const xShift = (interleave && (y % 2 === 1)) ? 1 : 0;
+
+                for (let x = 0; x < bufW; x++) {
+                    const effX = (x + xShift) % bufW;
+                    const pIdx = (y * bufW + effX) * 3;
+
+                    let r = floatRGB[pIdx];
+                    let g = floatRGB[pIdx + 1];
+                    let b = floatRGB[pIdx + 2];
+
+                    let chosenColor = activePalette[0];
+
+                    if (isFillp) {
+                        const pair = findTwoClosestPaletteColors(r, g, b, activePalette, metric);
+                        const pat = FILLP_PATTERNS[ditherAlgo].bits;
+                        const bit = pat[y & 3][x & 3];
+
+                        const totalDist = pair.d1 + pair.d2 + 0.0001;
+                        const ratio = pair.d1 / totalDist;
+                        const threshold = 0.5 - (ditherStrength / 260.0);
+
+                        if (ratio > Math.max(0.08, threshold)) {
+                            const cDark = pair.c1.luma < pair.c2.luma ? pair.c1 : pair.c2;
+                            const cLight = pair.c1.luma < pair.c2.luma ? pair.c2 : pair.c1;
+                            chosenColor = bit ? cLight : cDark;
+                        } else {
+                            chosenColor = pair.c1;
+                        }
+                    } else if (!isErrorDiffusion && ditherAlgo !== 'none') {
+                        let bias = 0;
+                        if (ditherAlgo === 'bayer2') bias = BAYER_2X2[y & 1][x & 1];
+                        else if (ditherAlgo === 'bayer4') bias = BAYER_4X4[y & 3][x & 3];
+                        else if (ditherAlgo === 'bayer8') bias = BAYER_8X8[y & 7][x & 7];
+                        else if (ditherAlgo === 'halftone') bias = HALFTONE_4X4[y & 3][x & 3];
+
+                        const offset = bias * ditherStrength * 1.6;
+                        chosenColor = findClosestPaletteColor(
+                            clamp255(r + offset),
+                            clamp255(g + offset),
+                            clamp255(b + offset),
+                            activePalette,
+                            metric
+                        );
+                    } else {
+                        chosenColor = findClosestPaletteColor(clamp255(r), clamp255(g), clamp255(b), activePalette, metric);
+
+                        if (isErrorDiffusion && ditherStrength > 0) {
+                            const errScale = ditherStrength / 60.0;
+                            const errR = (r - chosenColor.r) * errScale;
+                            const errG = (g - chosenColor.g) * errScale;
+                            const errB = (b - chosenColor.b) * errScale;
+
+                            if (ditherAlgo === 'floyd') {
+                                distributeError(floatRGB, bufW, bufH, effX + 1, y,     errR, errG, errB, 7 / 16);
+                                distributeError(floatRGB, bufW, bufH, effX - 1, y + 1, errR, errG, errB, 3 / 16);
+                                distributeError(floatRGB, bufW, bufH, effX,     y + 1, errR, errG, errB, 5 / 16);
+                                distributeError(floatRGB, bufW, bufH, effX + 1, y + 1, errR, errG, errB, 1 / 16);
+                            } else if (ditherAlgo === 'atkinson') {
+                                const wAtk = 1 / 8;
+                                distributeError(floatRGB, bufW, bufH, effX + 1, y,     errR, errG, errB, wAtk);
+                                distributeError(floatRGB, bufW, bufH, effX + 2, y,     errR, errG, errB, wAtk);
+                                distributeError(floatRGB, bufW, bufH, effX - 1, y + 1, errR, errG, errB, wAtk);
+                                distributeError(floatRGB, bufW, bufH, effX,     y + 1, errR, errG, errB, wAtk);
+                                distributeError(floatRGB, bufW, bufH, effX + 1, y + 1, errR, errG, errB, wAtk);
+                                distributeError(floatRGB, bufW, bufH, effX,     y + 2, errR, errG, errB, wAtk);
+                            } else if (ditherAlgo === 'sierra') {
+                                distributeError(floatRGB, bufW, bufH, effX + 1, y,     errR, errG, errB, 2 / 4);
+                                distributeError(floatRGB, bufW, bufH, effX - 1, y + 1, errR, errG, errB, 1 / 4);
+                                distributeError(floatRGB, bufW, bufH, effX,     y + 1, errR, errG, errB, 1 / 4);
+                            }
+                        }
+                    }
+
+                    const pixIndex = y * bufW + x;
+                    lastIndexBuffer[pixIndex] = chosenColor.picoIndex;
+                    colorCounts[chosenColor.picoIndex]++;
+
+                    const outIdx = pixIndex * 4;
+                    data[outIdx]     = chosenColor.r;
+                    data[outIdx + 1] = chosenColor.g;
+                    data[outIdx + 2] = chosenColor.b;
+                    data[outIdx + 3] = 255;
+                }
+            }
+
+            // 6. Simulação de Corrupção de Memória VRAM poke(0x6000)
+            const vramGlitch = parseInt(document.getElementById('vramGlitch').value, 10);
+            if (vramGlitch > 0) {
+                applyVramHardwareCorruption(data, lastIndexBuffer, bufW, bufH, vramGlitch, activePalette);
+            }
+
+            // 7. Simulação de Vídeo Composto RCA / NTSC Chroma Smear
+            const chromaBleed = parseInt(document.getElementById('chromaBleed').value, 10);
+            if (chromaBleed > 0) {
+                applyCompositeChromaSmear(data, bufW, bufH, chromaBleed / 100.0);
+            }
+
+            lowResCtx.putImageData(imgData, 0, 0);
+
+            // 8. Renderização Upscaled com Texturas Físicas (Scanlines, Subpixel LCD/CRT)
+            renderUpscaledDisplay(bufW, bufH);
+
+            // 9. Atualiza Histograma e Telemetria Técnica
+            const t1 = performance.now();
+            updateTelemetryAndHistogram(bufW, bufH, colorCounts, t1 - t0);
+        }
+
+        function clamp255(v) {
+            return v < 0 ? 0 : (v > 255 ? 255 : v);
+        }
+
+        function distributeError(buf, w, h, x, y, er, eg, eb, weight) {
+            if (x < 0 || x >= w || y < 0 || y >= h) return;
+            const idx = (y * w + x) * 3;
+            buf[idx]     = clamp255(buf[idx]     + er * weight);
+            buf[idx + 1] = clamp255(buf[idx + 1] + eg * weight);
+            buf[idx + 2] = clamp255(buf[idx + 2] + eb * weight);
+        }
+
+        function colorDistance(r1, g1, b1, c2, metric) {
+            const dr = r1 - c2.r;
+            const dg = g1 - c2.g;
+            const db = b1 - c2.b;
+
+            if (metric === 'euclidean') {
+                return dr * dr + dg * dg + db * db;
+            } else if (metric === 'lumafirst') {
+                const luma1 = 0.299 * r1 + 0.587 * g1 + 0.114 * b1;
+                const dLuma = luma1 - c2.luma;
+                return (dLuma * dLuma) * 6.0 + (dr * dr + dg * dg + db * db) * 0.35;
+            } else {
+                const rmean = (r1 + c2.r) * 0.5;
+                return (2 + rmean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rmean) / 256) * db * db;
+            }
+        }
+
+        function findClosestPaletteColor(r, g, b, palette, metric) {
+            let best = palette[0];
+            let minDist = Infinity;
+            for (let i = 0; i < palette.length; i++) {
+                const c = palette[i];
+                const d = colorDistance(r, g, b, c, metric);
+                if (d < minDist) {
+                    minDist = d;
+                    best = c;
+                }
+            }
+            return best;
+        }
+
+        function findTwoClosestPaletteColors(r, g, b, palette, metric) {
+            if (palette.length === 1) {
+                return { c1: palette[0], c2: palette[0], d1: 0, d2: 1 };
+            }
+            let c1 = palette[0], c2 = palette[1];
+            let d1 = Infinity, d2 = Infinity;
+
+            for (let i = 0; i < palette.length; i++) {
+                const c = palette[i];
+                const d = Math.sqrt(colorDistance(r, g, b, c, metric));
+                if (d < d1) {
+                    d2 = d1; c2 = c1;
+                    d1 = d;  c1 = c;
+                } else if (d < d2) {
+                    d2 = d;  c2 = c;
+                }
+            }
+            return { c1, c2, d1, d2 };
+        }
+
+        /***********************************************************************
+         * CORRUPÇÃO DE MEMÓRIA VRAM poke(0x6000) & NTSC CHROMA SMEAR
+         ***********************************************************************/
+        function triggerVramGlitchPulse() {
+            const slider = document.getElementById('vramGlitch');
+            glitchSeed = Math.floor(Math.random() * 999999);
+            if (parseInt(slider.value, 10) < 25) {
+                slider.value = 38;
+                updateLabel('valVramGlitch', '38%');
+            }
+            scheduleProcess();
+        }
+
+        function applyVramHardwareCorruption(rgbaData, indexBuffer, w, h, glitchPercent, activePalette) {
+            const nibbleSwap = document.getElementById('glitchNibbleSwap').checked;
+            const rowRepeat = document.getElementById('glitchRowRepeat').checked;
+
+            let seed = glitchSeed + glitchPercent * 17;
+            const rand = () => {
+                seed = (seed * 1664525 + 1013904223) % 4294967296;
+                return seed / 4294967296;
+            };
+
+            const numBands = Math.ceil((glitchPercent / 100) * 18);
+
+            for (let b = 0; b < numBands; b++) {
+                const startY = Math.floor(rand() * (h - 4));
+                const bandH = Math.max(1, Math.floor(rand() * 6));
+                const shiftX = Math.floor((rand() - 0.5) * (glitchPercent * 0.45));
+
+                for (let y = startY; y < Math.min(h, startY + bandH); y++) {
+                    const srcY = rowRepeat ? startY : y;
+                    for (let x = 0; x < w; x++) {
+                        let srcX = (x + shiftX + w) % w;
+                        if (nibbleSwap && (x % 2 === 0) && srcX + 1 < w) {
+                            srcX = srcX + 1;
+                        }
+
+                        const dstIdx = (y * w + x) * 4;
+                        const srcIdx = (srcY * w + srcX) * 4;
+
+                        if (rand() < (glitchPercent / 300)) {
+                            const palColor = activePalette[Math.floor(rand() * activePalette.length)];
+                            rgbaData[dstIdx]     = palColor.r;
+                            rgbaData[dstIdx + 1] = palColor.g;
+                            rgbaData[dstIdx + 2] = palColor.b;
+                        } else {
+                            rgbaData[dstIdx]     = rgbaData[srcIdx];
+                            rgbaData[dstIdx + 1] = rgbaData[srcIdx + 1];
+                            rgbaData[dstIdx + 2] = rgbaData[srcIdx + 2];
+                        }
+                    }
+                }
+            }
+        }
+
+        function applyCompositeChromaSmear(rgbaData, w, h, bleedAmount) {
+            const copy = new Uint8ClampedArray(rgbaData);
+            for (let y = 0; y < h; y++) {
+                let prevI = 0, prevQ = 0;
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    const r = copy[i], g = copy[i + 1], b = copy[i + 2];
+
+                    const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+                    let I = 0.596 * r - 0.274 * g - 0.322 * b;
+                    let Q = 0.211 * r - 0.523 * g + 0.312 * b;
+
+                    if (x > 0) {
+                        I = I * (1 - bleedAmount * 0.78) + prevI * (bleedAmount * 0.78);
+                        Q = Q * (1 - bleedAmount * 0.78) + prevQ * (bleedAmount * 0.78);
+                    }
+                    prevI = I;
+                    prevQ = Q;
+
+                    rgbaData[i]     = clamp255(Y + 0.956 * I + 0.621 * Q);
+                    rgbaData[i + 1] = clamp255(Y - 0.272 * I - 0.647 * Q);
+                    rgbaData[i + 2] = clamp255(Y - 1.106 * I + 1.703 * Q);
+                }
+            }
+        }
+
+        /***********************************************************************
+         * RENDERIZAÇÃO UPSCALED + TEXTURAS FÍSICAS (SCANLINES / CRT / LCD HAT)
+         ***********************************************************************/
+        function renderUpscaledDisplay(bufW, bufH, targetCanvasOverride = null, scaleOverride = null) {
+            const dispCanvas = targetCanvasOverride || document.getElementById('displayCanvas');
+            const ctx = dispCanvas.getContext('2d');
+
+            const upscaleFactor = scaleOverride || (bufW <= 64 ? 8 : (bufW <= 128 ? 4 : 2));
+            const outW = bufW * upscaleFactor;
+            const outH = bufH * upscaleFactor;
+
+            dispCanvas.width = outW;
+            dispCanvas.height = outH;
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(lowResCanvas, 0, 0, outW, outH);
+
+            // 1. Scanlines Físicas Horizontais
+            const scanlineInt = parseInt(document.getElementById('scanlines').value, 10) / 100.0;
+            if (scanlineInt > 0 && upscaleFactor >= 2) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${scanlineInt * 0.75})`;
+                const lineThickness = Math.max(1, Math.floor(upscaleFactor * 0.35));
+                for (let y = 0; y < outH; y += upscaleFactor) {
+                    ctx.fillRect(0, y + upscaleFactor - lineThickness, outW, lineThickness);
+                }
+            }
+
+            // 2. Máscara de Subpixel / Fósforo (LCD Grid / Aperture Grille / Shadow Mask)
+            const maskType = document.getElementById('subpixelMask').value;
+            const maskInt = parseInt(document.getElementById('maskIntensity').value, 10) / 100.0;
+
+            if (maskType !== 'none' && maskInt > 0 && upscaleFactor >= 2) {
+                if (maskType === 'lcd_grid') {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${maskInt * 0.7})`;
+                    for (let x = 0; x < outW; x += upscaleFactor) {
+                        ctx.fillRect(x, 0, 1, outH);
+                    }
+                    for (let y = 0; y < outH; y += upscaleFactor) {
+                        ctx.fillRect(0, y, outW, 1);
+                    }
+                } else if (maskType === 'aperture') {
+                    for (let x = 0; x < outW; x += 2) {
+                        ctx.fillStyle = `rgba(0, 0, 0, ${maskInt * 0.55})`;
+                        ctx.fillRect(x, 0, 1, outH);
+                    }
+                } else if (maskType === 'shadow') {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${maskInt * 0.65})`;
+                    for (let y = 0; y < outH; y += 2) {
+                        const offset = (y % 4 === 0) ? 0 : 2;
+                        for (let x = offset; x < outW; x += 4) {
+                            ctx.fillRect(x, y, 2, 1);
+                        }
+                    }
+                }
+            }
+
+            // 3. Grade Opcional de Sprites 8x8 do PICO-8
+            if (!targetCanvasOverride && document.getElementById('showGridOverlay').checked) {
+                ctx.strokeStyle = 'rgba(255, 236, 39, 0.35)';
+                ctx.lineWidth = 1;
+                const step = 8 * upscaleFactor;
+                for (let x = 0; x <= outW; x += step) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, outH); ctx.stroke();
+                }
+                for (let y = 0; y <= outH; y += step) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(outW, y); ctx.stroke();
+                }
+            }
+
+            // 4. Moldura / Bezel PICO-8
+            const showBezel = document.getElementById('showBezel').checked;
+            document.getElementById('picoHeaderBar').classList.toggle('hidden', !showBezel);
+            document.getElementById('canvasFrame').style.padding = showBezel ? '10px' : '0px';
+            document.getElementById('headerModeBadge').textContent = `${bufW}x${bufH}x4bpp`;
+
+            if (!targetCanvasOverride) {
+                applyViewportZoomStyling(outW, outH);
+            }
+        }
+
+        function renderComparisonOriginal(bufW, bufH) {
+            const dispCanvas = document.getElementById('displayCanvas');
+            const ctx = dispCanvas.getContext('2d');
+            const upscaleFactor = bufW <= 64 ? 8 : (bufW <= 128 ? 4 : 2);
+            const outW = bufW * upscaleFactor;
+            const outH = bufH * upscaleFactor;
+
+            dispCanvas.width = outW;
+            dispCanvas.height = outH;
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(sourceCanvas, 0, 0, outW, outH);
+
+            ctx.fillStyle = '#000080';
+            ctx.fillRect(6, 6, 155, 20);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px Courier New';
+            ctx.fillText('SINAL RGB ORIGINAL', 12, 20);
+
+            applyViewportZoomStyling(outW, outH);
+        }
+
+        function setCompareMode(state) {
+            if (isComparingOriginal === state) return;
+            isComparingOriginal = state;
+            scheduleProcess();
+        }
+
+        function setViewportZoom(mode) {
+            currentZoomMode = mode;
+            document.querySelectorAll('.zoom-btn').forEach(btn => {
+                const label = btn.textContent.toLowerCase();
+                const isActive = (mode === 'fit' && label.includes('ajustar')) || label.includes(String(mode) + 'x');
+                btn.classList.toggle('active', isActive);
+            });
+            const dispCanvas = document.getElementById('displayCanvas');
+            applyViewportZoomStyling(dispCanvas.width, dispCanvas.height);
+        }
+
+        function applyViewportZoomStyling(outW, outH) {
+            const dispCanvas = document.getElementById('displayCanvas');
+            const frame = document.getElementById('canvasFrame');
+            if (currentZoomMode === 'fit') {
+                frame.style.width = '100%';
+                frame.style.maxWidth = '480px';
+                dispCanvas.style.width = '100%';
+                dispCanvas.style.maxWidth = '460px';
+                dispCanvas.style.height = 'auto';
+            } else {
+                frame.style.width = 'auto';
+                frame.style.maxWidth = 'none';
+                const displaySizeW = lastBufferWidth * currentZoomMode;
+                const displaySizeH = lastBufferHeight * currentZoomMode;
+                dispCanvas.style.width = displaySizeW + 'px';
+                dispCanvas.style.maxWidth = 'none';
+                dispCanvas.style.height = displaySizeH + 'px';
+            }
+        }
+
+        /***********************************************************************
+         * TELEMETRIA TÉCNICA EM TEMPO REAL & HISTOGRAMA DE PALETA
+         ***********************************************************************/
+        function updateTelemetryAndHistogram(bufW, bufH, colorCounts, renderMs) {
+            const totalPixels = bufW * bufH;
+            const vramBytes = Math.ceil(totalPixels / 2);
+            const usedColors = colorCounts.filter(c => c > 0).length;
+            const activeTotal = getActivePalette().length;
+            const dispCanvas = document.getElementById('displayCanvas');
+
+            document.getElementById('statVramBytes').textContent = `${vramBytes} bytes (0x6000-0x${(0x6000 + vramBytes - 1).toString(16).toUpperCase()})`;
+            document.getElementById('statUniqueColors').textContent = `${usedColors} / ${activeTotal}`;
+            document.getElementById('statBufferRes').textContent = `${bufW}x${bufH} px (4bpp)`;
+            document.getElementById('statOutputRes').textContent = `${dispCanvas.width}x${dispCanvas.height} px`;
+            document.getElementById('statRenderTime').textContent = `${renderMs.toFixed(1)} ms`;
+
+            const histContainer = document.getElementById('histogramContainer');
+            histContainer.innerHTML = '';
+
+            let maxCount = Math.max(1, ...colorCounts);
+            let domIdx = 0;
+            for (let i = 0; i < 16; i++) {
+                if (colorCounts[i] > colorCounts[domIdx]) domIdx = i;
+            }
+
+            const bank = document.getElementById('paletteBank').value;
+            const domPaletteObj = (bank === 'secret') ? PICO8_SECRET_PALETTE[domIdx] : PICO8_STD_PALETTE[domIdx];
+            const domPct = ((colorCounts[domIdx] / totalPixels) * 100).toFixed(1);
+            document.getElementById('dominantColorLabel').textContent = `Dominante: Índice ${domIdx} ${domPaletteObj.hex} (${domPct}%)`;
+
+            for (let i = 0; i < 16; i++) {
+                const pct = (colorCounts[i] / totalPixels) * 100;
+                const heightPct = Math.max(4, (colorCounts[i] / maxCount) * 100);
+                const swatch = (bank === 'secret') ? PICO8_SECRET_PALETTE[i] : PICO8_STD_PALETTE[i];
+
+                const col = document.createElement('div');
+                col.className = 'flex-1 flex flex-col items-center justify-end h-full';
+                col.title = `Cor ${i} (${swatch.hex}): ${colorCounts[i]} px (${pct.toFixed(1)}%)`;
+
+                const bar = document.createElement('div');
+                bar.style.width = '100%';
+                bar.style.height = `${colorCounts[i] > 0 ? heightPct : 2}%`;
+                bar.style.backgroundColor = swatch.hex;
+                bar.style.borderTop = '1px solid #ffffff';
+
+                const lbl = document.createElement('div');
+                lbl.className = 'mono text-[8px] text-[#c0c0c0] mt-0.5 leading-none';
+                lbl.textContent = i.toString(16).toUpperCase();
+
+                col.appendChild(bar);
+                col.appendChild(lbl);
+                histContainer.appendChild(col);
+            }
+        }
+
+        /***********************************************************************
+         * EXPORTAÇÃO REAL: PNG UPSCALED, PNG 1:1 NATIVO & DADOS HEX __gfx__
+         ***********************************************************************/
+        function exportUpscaledPNG() {
+            const tempCanvas = document.createElement('canvas');
+            const scale = lastBufferWidth <= 64 ? 16 : (lastBufferWidth <= 128 ? 8 : 4);
+            renderUpscaledDisplay(lastBufferWidth, lastBufferHeight, tempCanvas, scale);
+
+            const link = document.createElement('a');
+            link.download = `pico8_crt_${tempCanvas.width}x${tempCanvas.height}.png`;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function exportNativePNG() {
+            const link = document.createElement('a');
+            link.download = `pico8_native_${lastBufferWidth}x${lastBufferHeight}.png`;
+            link.href = lowResCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function generatePico8GfxString() {
+            let lines = ["__gfx__"];
+            for (let y = 0; y < 128; y++) {
+                let rowStr = "";
+                for (let x = 0; x < 128; x++) {
+                    const srcX = Math.min(lastBufferWidth - 1, Math.floor((x / 128) * lastBufferWidth));
+                    const srcY = Math.min(lastBufferHeight - 1, Math.floor((y / 128) * lastBufferHeight));
+                    const idx = lastIndexBuffer[srcY * lastBufferWidth + srcX] & 0x0F;
+                    rowStr += idx.toString(16);
+                }
+                lines.push(rowStr);
+            }
+            return lines.join("\n");
+        }
+
+        function openGfxExportModal() {
+            const gfxStr = generatePico8GfxString();
+            document.getElementById('gfxTextarea').value = gfxStr;
+            document.getElementById('copyConfirmMsg').textContent = '';
+            document.getElementById('gfxModal').classList.remove('hidden');
+        }
+
+        function closeGfxExportModal() {
+            document.getElementById('gfxModal').classList.add('hidden');
+        }
+
+        function copyGfxToClipboard() {
+            const textarea = document.getElementById('gfxTextarea');
+            textarea.select();
+            document.execCommand('copy');
+            document.getElementById('copyConfirmMsg').textContent = '✓ Copiado para a área de transferência!';
+        }
+
+        function downloadP8Cartridge() {
+            const gfxBlock = generatePico8GfxString();
+            const bank = document.getElementById('paletteBank').value;
+            let palLuaCode = "";
+
+            if (bank === 'secret') {
+                palLuaCode = "for i=0,15 do pal(i, 128+i, 1) end";
+            }
+
+            const p8Content = [
+                "pico-8 cartridge // http://www.pico-8.com",
+                "version 41",
+                "__lua__",
+                "-- gerado por pico-8 vram processor",
+                "function _init()",
+                "  " + palLuaCode,
+                "end",
+                "function _draw()",
+                "  cls(0)",
+                "  sspr(0, 0, 128, 128, 0, 0)",
+                "end",
+                gfxBlock,
+                ""
+            ].join("\n");
+
+            const blob = new Blob([p8Content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.download = "vram_capture.p8";
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+
+        function toggleAboutModal() {
+            document.getElementById('aboutModal').classList.toggle('hidden');
+        }
+
+        function resetAllParams() {
+            document.getElementById('videoMode').value = '128x128';
+            document.getElementById('cropMode').value = 'cover';
+            document.getElementById('flipX').checked = false;
+            document.getElementById('flipY').checked = false;
+            document.getElementById('rot90').checked = false;
+            document.getElementById('interleave').checked = false;
+
+            document.getElementById('brightness').value = 0;
+            updateLabel('valBright', '0');
+            document.getElementById('contrast').value = 15;
+            updateLabel('valContrast', '15%');
+            document.getElementById('gamma').value = 1.00;
+            updateLabel('valGamma', '1.00');
+            document.getElementById('saturation').value = 120;
+            updateLabel('valSat', '120%');
+            document.getElementById('sharpen').value = 25;
+            updateLabel('valSharp', '25%');
+
+            document.getElementById('ditherAlgo').value = 'bayer4';
+            document.getElementById('ditherStrength').value = 42;
+            updateLabel('valDitherStrength', '42');
+
+            document.getElementById('paletteBank').value = 'standard';
+            document.getElementById('colorMetric').value = 'redmean';
+
+            document.getElementById('scanlines').value = 30;
+            updateLabel('valScanlines', '30%');
+            document.getElementById('subpixelMask').value = 'lcd_grid';
+            document.getElementById('maskIntensity').value = 25;
+            updateLabel('valMaskInt', '25%');
+            document.getElementById('chromaBleed').value = 15;
+            updateLabel('valChromaBleed', '15%');
+            document.getElementById('vramGlitch').value = 0;
+            updateLabel('valVramGlitch', '0%');
+
+            onPaletteBankChange();
+            updateFillpPatternPreview();
+            scheduleProcess();
+        }
+    </script>
+</body>
+</html>
